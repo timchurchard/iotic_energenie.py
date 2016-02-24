@@ -1,0 +1,18 @@
+diff --git a/src/monitor.py b/src/monitor.py
+index 952311b..759340e 100644
+--- a/src/monitor.py
++++ b/src/monitor.py
+@@ -20,6 +20,13 @@ def logMessage (msg):
+     HEADINGS = 'timestamp,mfrid,prodid,sensorid,flags,switch,voltage,freq,reactive,real'
+ 
+     global log_file
++
++    if log_file is not None:
++        if os.stat(LOG_FILENAME).st_size > (1024 * 5):
++            log_file.close()
++            log_file = None
++            os.unlink(LOG_FILENAME)
++
+     if log_file == None:
+         if not os.path.isfile(LOG_FILENAME):
+             log_file = open(LOG_FILENAME, 'w')
