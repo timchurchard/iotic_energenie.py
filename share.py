@@ -95,7 +95,7 @@ def main():
                     if row['timestamp'] > last_time:
                         last_time = row['timestamp']
                     #
-                    data_point.share(row)
+                    data_point.share_async(row)
                     time.sleep(0.11)  # todo: ensure never exceed 10 msg/s
                     print("Shared: ", row)
                 #
