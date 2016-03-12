@@ -4,9 +4,11 @@ logger = logging.basicConfig(level=logging.WARNING)
 
 import sqlite3
 
+from sys import exit
 from time import sleep
 from threading import Lock
 from functools import partial
+from base64 import b64encode
 
 from IoticAgent import IOT
 
@@ -24,8 +26,8 @@ def data_to_create(tablename, data):
             ret += key + " INTEGER, "
         elif isinstance(data[key], float):
             ret += key + " REAL, "
-        elif isinstance(data[key], bool):
-            ret += key + " INTEGER, "
+        #elif isinstance(data[key], bool):
+        #    ret += key + " INTEGER, "
         elif isinstance(data[key], bytes):
             ret += key + " BLOB, "
         else:
@@ -38,8 +40,8 @@ def data_to_create(tablename, data):
 
 def data_to_insert(tablename, rec):
     for key in rec:
-        if isinstance(rec[key], str):
-            rec[key] = "'" + rec[key] + "'"
+        if isinstance(rec[key], bytes):
+            rec[key] = b64encode(rec[key]).decode('utf8')
     keys = ','.join(rec.keys())
     vals = tuple(rec.values())
     return 'INSERT INTO ' + tablename + ' (' + keys + ') VALUES ' + str(vals) + ';'
@@ -84,13 +86,21 @@ if __name__ == '__main__':
     #
     data_lock = Lock()
     #
-    with IOT.Client() as client:
+    client = None
+    try:
+        client = IOT.Client()
         client.register_catchall_feeddata(partial(data_cb, data_lock))
         client.register_catchall_controlreq(partial(data_cb, data_lock))
-        while True:
-            try:
-                print("Main loop is running.  Press ctrl+c to quit.")
-                sleep(60)
-            except KeyboardInterrupt:
-                break
+        client.start()
+    except Exception as exc:
+        print("Failed to start.  Give up.")
+        print(exc)
+        exit(1)
+    while True:
+        try:
+            print("Main loop is running.  Press ctrl+c to quit.")
+            sleep(60)
+        except KeyboardInterrupt:
+            break
+    client.stop()
 
